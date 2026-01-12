@@ -46,6 +46,7 @@ Counter-rotating color wave animation for Star Trek TOS Bussard collectors using
 ![Bussard Light Filter](Bussard_light_filter_front.png)
 
 ![Bussard Light Filter](Bussard_light_filter_rear.png)
+
 Bussard collector light filter assembly showing LED ring configuration.
 
 [Return to Table of Contents](<#table of contents>)
