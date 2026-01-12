@@ -41,6 +41,12 @@ Counter-rotating color wave animation for Star Trek TOS Bussard collectors using
 - 8 LEDs × 60mA max × 2 rings = 960mA maximum
 - Typical operation: ~400-600mA (due to color mixing)
 
+**Physical Installation:**
+
+![Bussard Light Filter](Bussard_light_filter.png)
+
+Bussard collector light filter assembly showing LED ring configuration.
+
 [Return to Table of Contents](<#table of contents>)
 
 ## Animation Algorithm
