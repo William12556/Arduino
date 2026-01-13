@@ -25,19 +25,26 @@ void setup() {
     delay(100);
   }
   
-  FastLED.addLeds<WS2812, PIN_PORT, RGB>(leds_port, LED_COUNT);
-  FastLED.addLeds<WS2812, PIN_STARBOARD, RGB>(leds_starboard, LED_COUNT);
+  FastLED.addLeds<WS2812B, PIN_PORT, RGB>(leds_port, LED_COUNT);
+  FastLED.addLeds<WS2812B, PIN_STARBOARD, RGB>(leds_starboard, LED_COUNT);
   FastLED.setBrightness(128);
 }
 
 void loop() {
-  // Heartbeat blink
-  static unsigned long last_beat = 0;
-  static bool beat_state = false;
-  if (millis() - last_beat >= 500) {
-    last_beat = millis();
-    beat_state = !beat_state;
-    digitalWrite(LED_BUILTIN, beat_state);
+  // Double heartbeat blink pattern: 2 fast blinks, 2 sec pause
+  static unsigned long pattern_start = 0;
+  unsigned long elapsed = millis() - pattern_start;
+  
+  if (elapsed < 100) {
+    digitalWrite(LED_BUILTIN, HIGH);  // First blink on
+  } else if (elapsed < 200) {
+    digitalWrite(LED_BUILTIN, LOW);   // First blink off
+  } else if (elapsed < 300) {
+    digitalWrite(LED_BUILTIN, HIGH);  // Second blink on
+  } else if (elapsed < 400) {
+    digitalWrite(LED_BUILTIN, LOW);   // Second blink off
+  } else if (elapsed >= 2400) {
+    pattern_start = millis();         // Reset after 2.4 sec total
   }
   
   // RED
