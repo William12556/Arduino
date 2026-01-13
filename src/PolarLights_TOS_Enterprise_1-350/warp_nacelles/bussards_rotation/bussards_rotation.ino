@@ -27,6 +27,7 @@
 // Hardware Configuration
 #define PIN_PORT        2
 #define PIN_STARBOARD   3
+#define LED_BUILTIN     LED_BUILTIN  // Arduino Nano ESP32 built-in LED
 #define LED_COUNT       8
 #define LED_TYPE        WS2812
 #define COLOR_ORDER     GRB
@@ -60,6 +61,8 @@ LEDState state_starboard[LED_COUNT];
 
 // Timing
 unsigned long last_rotation = 0;
+unsigned long last_heartbeat = 0;
+bool heartbeat_state = false;
 
 /*
  * Initialize LED state with random starting values
@@ -200,8 +203,20 @@ void apply_colors(LEDState* states, CRGB* leds) {
 void setup() {
   delay(100);
   
+  // Initialize built-in LED for heartbeat
+  pinMode(LED_BUILTIN, OUTPUT);
+  
+  // Startup blink sequence - 3 fast blinks to confirm code is running
+  for (int i = 0; i < 3; i++) {
+    digitalWrite(LED_BUILTIN, HIGH);
+    delay(100);
+    digitalWrite(LED_BUILTIN, LOW);
+    delay(100);
+  }
+  
   // Initialize serial for debugging (optional)
   Serial.begin(115200);
+  delay(100);
   
   // Initialize FastLED
   FastLED.addLeds<LED_TYPE, PIN_PORT, COLOR_ORDER>(leds_port, LED_COUNT);
@@ -220,6 +235,17 @@ void setup() {
   Serial.print("Rotation Speed: ~50 RPM (");
   Serial.print(ROTATION_DELAY);
   Serial.println(" ms delay)");
+  Serial.println("Heartbeat LED: Blinking every 1 second");
+  
+  // Test LEDs - set all to dim red briefly
+  Serial.println("LED Test: All LEDs dim red for 2 seconds...");
+  for (int i = 0; i < LED_COUNT; i++) {
+    leds_port[i] = CRGB(32, 0, 0);
+    leds_starboard[i] = CRGB(32, 0, 0);
+  }
+  FastLED.show();
+  delay(2000);
+  Serial.println("Starting animation...");
 }
 
 void loop() {
@@ -253,4 +279,11 @@ void loop() {
   
   // Update display
   FastLED.show();
+  
+  // Heartbeat blink (1Hz)
+  if (current_time - last_heartbeat >= 1000) {
+    last_heartbeat = current_time;
+    heartbeat_state = !heartbeat_state;
+    digitalWrite(LED_BUILTIN, heartbeat_state ? HIGH : LOW);
+  }
 }
