@@ -34,7 +34,7 @@
 #define BRIGHTNESS      255
 
 // Animation Parameters
-#define ROTATION_DELAY  24    // milliseconds between rotation steps (~50 RPM: 60000ms/min ÷ 50rpm ÷ 8leds ≈ 24ms)
+#define ROTATION_DELAY  150   // milliseconds between rotation steps (50 RPM: 60000ms/min ÷ 50rpm ÷ 8leds = 150ms)
 #define FLASH_PROB      12    // Percentage chance per LED per frame (0-100)
 
 // Flash type probabilities (must sum to 100)
