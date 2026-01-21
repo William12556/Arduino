@@ -29,3 +29,4 @@ build/
 10000
 test.txt
 **/tmp
+*.pdf
