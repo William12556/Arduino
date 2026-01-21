@@ -15,14 +15,17 @@ build/
 # macOS
 .DS_Store
 **/.DS_Store
+.zsh_history
 
 # Logs
 *.log
 **/*.log
 
+# Obsidian
+.obsidian/
+.canvas
+
+# other
 10000
-.zsh_history
 test.txt
 **/tmp
-
-.obsidian/
