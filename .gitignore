@@ -2,6 +2,9 @@
 __pycache__/
 *.pyc
 .pytest_cache/
+dist/
+build/
+*.egg-info/
 
 # Virtual environments
 venv/
@@ -24,6 +27,13 @@ build/
 # Obsidian
 .obsidian/
 *.canvas
+
+# AI framework
+deprecated/
+workspace/admin/
+workspace/ai/
+workspace/proposal/
+workspace/proposal/closed/
 
 # other
 10000
