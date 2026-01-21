@@ -23,7 +23,7 @@ build/
 
 # Obsidian
 .obsidian/
-.canvas
+*.canvas
 
 # other
 10000
