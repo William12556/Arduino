@@ -1,23 +1,25 @@
 Created: 2025 January 13
 
-# Bussard Rotation Effect
+# PolarLights TOS Enterprise 1:350 Scale - Lighting Project
 
 ## Table of Contents
 
 - [Overview](<#overview>)
+- [Model Specifications](<#model specifications>)
+- [Electronics Architecture](<#electronics architecture>)
 - [Hardware Configuration](<#hardware configuration>)
-- [Animation Algorithm](<#animation algorithm>)
-- [Configuration Parameters](<#configuration parameters>)
-- [Implementation Notes](<#implementation notes>)
+- [Bussard Rotation Effect](<#bussard rotation effect>)
+- [Power Requirements](<#power requirements>)
 - [Version History](<#version history>)
 
 [Return to Table of Contents](<#table of contents>)
 
 ## Overview
 
-Counter-rotating color wave animation for Star Trek TOS Bussard collectors using two 8-LED WS2812 rings. Implements continuous rotation with probability-based flash overlays to simulate the organic lighting characteristics observed in original series footage.
+Arduino-based lighting system for PolarLights 1:350 scale TOS Enterprise model. Currently implements counter-rotating Bussard collector effects using a single Arduino Nano ESP32 controlling all lighting functions. The system provides screen-accurate Star Trek TOS lighting effects with sophisticated animations including counter-rotating color waves, probability-based flash effects, and organic pulsing patterns.
 
 **Key Features:**
+- Single board control architecture
 - Independent counter-rotating rings (port CCW, starboard CW)
 - Rotating red+green base color wave
 - Random red+blue and pure green flash overlays
@@ -26,20 +28,47 @@ Counter-rotating color wave animation for Star Trek TOS Bussard collectors using
 
 [Return to Table of Contents](<#table of contents>)
 
-## Hardware Configuration
+## Model Specifications
+
+- **Manufacturer:** PolarLights
+- **Scale:** 1:350
+- **Subject:** USS Enterprise NCC-1701 (TOS)
+- **Model Length:** Approximately 92 cm (36 inches)
+
+[Return to Table of Contents](<#table of contents>)
+
+## Electronics Architecture
+
+### Microcontroller
 
 **Board:** Arduino Nano ESP32
+- Single board controls all lighting effects
+- Current implementation: Bussard collectors only
+- Planned: Impulse engines, deflector dish, warp nacelles
 
-**LED Hardware:**
-- 2x AZDelivery RGB LED Ring 8 Bit WS2812 5050
+### LED Hardware
+
+- **Type:** WS2812B addressable RGB LEDs
+- **Control Protocol:** Single-wire data signal (800kHz)
+- **Bussard Collectors:** 2x AZDelivery RGB LED Ring 8 Bit WS2812
+- **Color Order:** GRB
+
+[Return to Table of Contents](<#table of contents>)
+
+## Hardware Configuration
+
+### Pin Assignments
+
 - Port ring: Pin D2
 - Starboard ring: Pin D3
-- Color order: GRB
-- Protocol: WS2812 (800kHz)
 
-**Power Requirements:**
+### Power Requirements
+
+**Bussard Collectors:**
 - 8 LEDs × 60mA max × 2 rings = 960mA maximum
 - Typical operation: ~400-600mA (due to color mixing)
+- External 5V supply required (2A minimum)
+- USB power insufficient
 
 ### Wiring Diagram
 
@@ -180,9 +209,11 @@ Bussard collector light filter assembly showing LED ring configuration.
 
 [Return to Table of Contents](<#table of contents>)
 
-## Animation Algorithm
+## Bussard Rotation Effect
 
-### Base Layer: Rotating Color Wave
+### Animation Algorithm
+
+**Base Layer: Rotating Color Wave**
 
 Each LED maintains independent state (red, green, blue, fade_direction). Color states rotate through ring each frame:
 - Port: Counter-clockwise rotation
@@ -190,7 +221,7 @@ Each LED maintains independent state (red, green, blue, fade_direction). Color s
 - Base color: Red (255) + Green fade (0-63)
 - Rotation delay: 24ms per step (~50 RPM)
 
-### Flash Layer: Probability-Based Overlays
+**Flash Layer: Probability-Based Overlays**
 
 Each LED independently checks for flash trigger each frame:
 - 12% total flash probability per LED per frame
@@ -210,11 +241,9 @@ Each LED independently checks for flash trigger each frame:
 6. Apply composite colors to FastLED
 7. Display output
 
-[Return to Table of Contents](<#table of contents>)
+### Configuration Parameters
 
-## Configuration Parameters
-
-### Timing Parameters
+**Timing Parameters:**
 
 ```cpp
 #define ROTATION_DELAY  150   // Rotation step delay in milliseconds
@@ -227,14 +256,14 @@ Each LED independently checks for flash trigger each frame:
 - Current setting: 150ms = 50 RPM
 - Adjust ROTATION_DELAY to achieve desired visual effect
 
-### Color Probabilities
+**Color Probabilities:**
 
 ```cpp
 #define PROB_RED_BLUE   16    // Percentage of flashes that are red+blue
 #define PROB_PURE_GREEN 4     // Percentage of flashes that are pure green
 ```
 
-### Hardware Parameters
+**Hardware Parameters:**
 
 ```cpp
 #define PIN_PORT        2     // Port ring data pin
@@ -243,33 +272,25 @@ Each LED independently checks for flash trigger each frame:
 #define BRIGHTNESS      255   // Global brightness (0-255)
 ```
 
-[Return to Table of Contents](<#table of contents>)
+### Implementation Notes
 
-## Implementation Notes
-
-### Thread Safety
-
+**Thread Safety:**
 All state updates occur within single-threaded `loop()` function. No interrupt conflicts with FastLED output.
 
-### Memory Usage
-
+**Memory Usage:**
 - 2 rings × 8 LEDs × 3 bytes (CRGB) = 48 bytes for LED output
 - 2 rings × 8 LEDs × sizeof(LEDState) = ~112 bytes for state tracking
 - Total: ~160 bytes SRAM for LED management
 
-### Performance
-
+**Performance:**
 - Frame rate: Limited by rotation delay (24ms) + processing time
 - Processing overhead: <1ms per frame for 16 LEDs
 - Effective frame rate: ~41 FPS
 
-### Debugging
-
+**Debugging:**
 Serial output provides initialization confirmation. Monitor at 115200 baud.
 
-### Migration from Original Code
-
-**Changes from Bussards.ino:**
+**Migration from Original Code:**
 - Reduced from 10 to 8 LEDs per ring
 - Adafruit_NeoPixel → FastLED library
 - Added rotation algorithm
@@ -279,14 +300,29 @@ Serial output provides initialization confirmation. Monitor at 115200 baud.
 
 [Return to Table of Contents](<#table of contents>)
 
+## Power Requirements
+
+**Current Status:**
+- Voltage: 5V
+- Current draw: ~400-600mA typical (Bussard collectors only)
+- Power supply: External 5V 2A minimum recommended
+- USB power: Insufficient for reliable operation
+
+**Future Expansion:**
+Power requirements will increase when additional lighting effects are implemented (impulse engines, deflector dish, warp nacelles).
+
+[Return to Table of Contents](<#table of contents>)
+
 ## Version History
 
 | Version | Date | Description |
 |---------|------|-------------|
+| 2.0.0   | 2026-01-23 | Merged README files, simplified for single-board architecture |
 | 1.0.3   | 2025-01-18 | Added 74AHCT125N pinout diagram |
 | 1.0.2   | 2025-01-18 | Corrected ROTATION_DELAY to 150ms for accurate 50 RPM |
 | 1.0.1   | 2025-01-18 | Added Mermaid wiring diagram with 74AHCT125N level shifter |
 | 1.0.0   | 2025-01-13 | Initial implementation with counter-rotation and FastLED |
+| 0.1.0   | 2025-01-13 | Initial directory structure and documentation |
 
 [Return to Table of Contents](<#table of contents>)
 
