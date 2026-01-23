@@ -1,8 +1,0 @@
-{
-  "board": {
-    "filename": "bussard_rotation_circuit.kicad_pcb"
-  },
-  "sheets": [
-    ["root", "bussard_rotation_circuit.kicad_sch"]
-  ]
-}
