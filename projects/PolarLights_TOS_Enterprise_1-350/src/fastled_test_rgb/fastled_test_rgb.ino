@@ -45,7 +45,7 @@
  * 
  * EXPECTED BEHAVIOR:
  * - 5 fast blinks on startup (startup confirmation)
- * - Double heartbeat pattern on built-in LED (operational status)
+ * - On-board LED toggles every 500ms (operational status indicator)
  * - Both rings cycle through colors in sync: R -> G -> B -> W -> Off
  * - Each color displays for 1 second
  */
@@ -82,21 +82,14 @@ void setup() {
 }
 
 void loop() {
-  // Heartbeat indicator: double blink pattern
-  // Pattern: blink-pause-blink-long_pause (repeats every 2.4 seconds)
-  static unsigned long pattern_start = 0;
-  unsigned long elapsed = millis() - pattern_start;
+  // Heartbeat indicator: simple periodic flash
+  // Flash every 500ms to indicate sketch is running
+  static unsigned long last_heartbeat = 0;
+  unsigned long current_time = millis();
   
-  if (elapsed < 100) {
-    digitalWrite(LED_BUILTIN, HIGH);  // First blink on
-  } else if (elapsed < 200) {
-    digitalWrite(LED_BUILTIN, LOW);   // First blink off
-  } else if (elapsed < 300) {
-    digitalWrite(LED_BUILTIN, HIGH);  // Second blink on
-  } else if (elapsed < 400) {
-    digitalWrite(LED_BUILTIN, LOW);   // Second blink off
-  } else if (elapsed >= 2400) {
-    pattern_start = millis();         // Reset pattern after 2.4 seconds
+  if (current_time - last_heartbeat >= 500) {
+    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));  // Toggle LED
+    last_heartbeat = current_time;
   }
   
   // RED - Test red channel
