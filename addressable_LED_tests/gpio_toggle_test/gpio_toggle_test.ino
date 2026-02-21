@@ -45,7 +45,7 @@ void loop() {
   static unsigned long last_toggle = 0;
   static bool state = false;
   
-  if (now - last_toggle >= 500) {
+  if (now - last_toggle >= 1500) {
     state = !state;
     digitalWrite(PIN_PORT, state ? HIGH : LOW);
     digitalWrite(PIN_STARBOARD, state ? LOW : HIGH);  // Opposite phase
