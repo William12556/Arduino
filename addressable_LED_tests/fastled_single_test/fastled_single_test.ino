@@ -123,7 +123,8 @@
 #define IS_RGBW         0
 
 // Data pin (Pin 2 on all supported boards)
-#define DATA_PIN        2
+// NOTE: Use D2 alias on Nano ESP32 - integer 2 does not resolve to GPIO2
+#define DATA_PIN        D2
 
 // Number of LEDs under test
 #define LED_COUNT       1
