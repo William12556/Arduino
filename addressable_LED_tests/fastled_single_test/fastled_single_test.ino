@@ -39,14 +39,21 @@
  *
  * DATA PIN
  * --------
- * Pin 6 is used across all supported boards.
+ * Pin 2 is used across all supported boards.
  *
  *   Board                    | Physical Pin | Notes
  *   -------------------------|--------------|----------------------------
- *   Pro Trinket 5V           | Pin 6        | 5V logic, no shifter needed
- *   ItsyBitsy 5V 32u4        | Pin 6        | 5V logic, no shifter needed
- *   Arduino Nano             | Pin 6        | 5V logic, no shifter needed
- *   Arduino Nano ESP32       | Pin 6 (D6)   | 3.3V logic - see WARNING
+ *   Pro Trinket 5V           | Pin 2        | 5V logic, no shifter needed
+ *   ItsyBitsy 5V 32u4        | Pin 2        | 5V logic, no shifter needed
+ *   Arduino Nano             | Pin 2        | 5V logic, no shifter needed
+ *   Arduino Nano ESP32       | Pin 2 (D2)   | 3.3V logic - see WARNING
+ *
+ * NOTE: GPIO6 MUST NOT BE USED ON NANO ESP32
+ * -------------------------------------------
+ * GPIO6 on the ESP32-S3 is connected to the QSPI flash interface.
+ * Using it as a data output will produce corrupted or absent signals.
+ * Pin 2 (GPIO2 / D2) is consistent with all other addressable LED
+ * sketches in this project.
  *
  * WARNING: ARDUINO NANO ESP32 LOGIC LEVEL
  * ----------------------------------------
@@ -58,13 +65,13 @@
  *   Level Shifter Wiring (74AHCT125N):
  *   - VCC  -> 5V supply
  *   - GND  -> Common ground
- *   - 1A   -> Nano ESP32 Pin 6
+ *   - 1A   -> Nano ESP32 Pin 2
  *   - 1Y   -> LED DIN
  *   - 1OE  -> GND (always enabled)
  *
  * WIRING (ALL BOARDS)
  * --------------------
- * LED DIN -> Pin 6 (via 74AHCT125N for Nano ESP32)
+ * LED DIN -> Pin 2 (via 74AHCT125N for Nano ESP32)
  * LED 5V  -> External 5V supply
  * LED GND -> Common ground with board and supply
  *
@@ -114,8 +121,8 @@
 // Set to 1 if using SK6812RGBW (enables white channel test)
 #define IS_RGBW         0
 
-// Data pin (Pin 6 on all supported boards)
-#define DATA_PIN        6
+// Data pin (Pin 2 on all supported boards)
+#define DATA_PIN        2
 
 // Number of LEDs under test
 #define LED_COUNT       1
