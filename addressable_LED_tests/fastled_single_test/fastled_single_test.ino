@@ -65,9 +65,9 @@
  *   Level Shifter Wiring (74AHCT125N):
  *   - VCC  -> 5V supply
  *   - GND  -> Common ground
- *   - 1A   -> Nano ESP32 Pin 2
- *   - 1Y   -> LED DIN
- *   - 1OE  -> GND (always enabled)
+ *   - 3A   -> Nano ESP32 Pin 2
+ *   - 3Y   -> LED DIN
+ *   - 3OE  -> GND (always enabled)
  *
  * WIRING (ALL BOARDS)
  * --------------------
@@ -89,7 +89,8 @@
  *   2. Built-in LED blinks 5 times (startup confirmation).
  *   3. Color cycle begins: RED -> GREEN -> BLUE -> WHITE -> OFF, 2s each.
  *      SK6812RGBW adds a WARM WHITE step using the white channel only.
- *   4. Built-in LED toggles every 500ms as a heartbeat indicator.
+ *   4. Built-in LED double-flashes as a heartbeat indicator.
+ *      Pattern: ON 100ms, OFF 250ms, ON 100ms, OFF 1000ms, repeat.
  *
  * ARDUINO IDE BOARD SELECTION
  * ----------------------------
@@ -193,19 +194,41 @@ void setup() {
 }
 
 // ============================================================================
+// Heartbeat state machine
+// Pattern: ON 100ms | OFF 250ms | ON 100ms | OFF 1000ms | repeat
+// ============================================================================
+
+// Heartbeat timing table: {pin state, duration ms}
+static const struct { uint8_t state; unsigned int duration; } HB[] = {
+  { HIGH, 100  },   // Flash 1 on
+  { LOW,  250  },   // Gap
+  { HIGH, 100  },   // Flash 2 on
+  { LOW,  1000 }    // Pause
+};
+#define HB_STEPS (sizeof(HB) / sizeof(HB[0]))
+
+/**
+ * Non-blocking heartbeat update.
+ * Call as frequently as possible from loop() and blocking wait loops.
+ * Advances through the double-flash pattern using millis() timing.
+ */
+void updateHeartbeat() {
+  static uint8_t  step       = 0;
+  static unsigned long timer = 0;
+  unsigned long now = millis();
+
+  if (now - timer >= HB[step].duration) {
+    step  = (step + 1) % HB_STEPS;
+    timer = now;
+    digitalWrite(LED_BUILTIN, HB[step].state);
+  }
+}
+
+// ============================================================================
 // Loop
 // ============================================================================
 
 void loop() {
-  static unsigned long last_heartbeat = 0;
-  unsigned long now = millis();
-
-  // Heartbeat: built-in LED toggles every 500ms
-  if (now - last_heartbeat >= 500) {
-    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-    last_heartbeat = now;
-  }
-
   // Color cycle
   showColor("RED",   CRGB(255, 0, 0));
   showColor("GREEN", CRGB(0, 255, 0));
@@ -234,7 +257,11 @@ void showColor(const char* label, CRGB color) {
   Serial.println(label);
   leds[0] = color;
   FastLED.show();
-  delay(2000);
+  // Non-blocking 2 second wait - heartbeat runs during hold
+  unsigned long start = millis();
+  while (millis() - start < 2000) {
+    updateHeartbeat();
+  }
 }
 
 /**
@@ -262,7 +289,11 @@ void showRGBW() {
   raw[3] = BRIGHTNESS;   // W byte at offset 3 for LED[0]
 
   FastLED.show();
-  delay(2000);
+  // Non-blocking 2 second wait - heartbeat runs during hold
+  unsigned long start = millis();
+  while (millis() - start < 2000) {
+    updateHeartbeat();
+  }
 
   // Clear white channel
   raw[3] = 0;
