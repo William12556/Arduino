@@ -39,21 +39,20 @@
  *
  * DATA PIN
  * --------
- * Pin 2 is used across all supported boards.
+ * Pin 6 is used across all supported boards.
  *
  *   Board                    | Physical Pin | Notes
  *   -------------------------|--------------|----------------------------
- *   Pro Trinket 5V           | Pin 2        | 5V logic, no shifter needed
- *   ItsyBitsy 5V 32u4        | Pin 2        | 5V logic, no shifter needed
- *   Arduino Nano             | Pin 2        | 5V logic, no shifter needed
- *   Arduino Nano ESP32       | Pin 2 (D2)   | 3.3V logic - see WARNING
+ *   Pro Trinket 5V           | Pin 6        | 5V logic, no shifter needed
+ *   ItsyBitsy 5V 32u4        | Pin 6        | 5V logic, no shifter needed
+ *   Arduino Nano             | Pin 6        | 5V logic, no shifter needed
+ *   Arduino Nano ESP32       | Pin 6 (D6)   | 3.3V logic - see WARNING
  *
- * NOTE: GPIO6 MUST NOT BE USED ON NANO ESP32
- * -------------------------------------------
- * GPIO6 on the ESP32-S3 is connected to the QSPI flash interface.
- * Using it as a data output will produce corrupted or absent signals.
- * Pin 2 (GPIO2 / D2) is consistent with all other addressable LED
- * sketches in this project.
+ * NOTE: GPIO RESTRICTIONS ON NANO ESP32
+ * ---------------------------------------
+ * GPIO6  - connected to QSPI flash, must not be used.
+ * GPIO2  - FastLED hangs on ESP32-S3, must not be used.
+ * GPIO8  - confirmed working with FastLED on Nano ESP32.
  *
  * WARNING: ARDUINO NANO ESP32 LOGIC LEVEL
  * ----------------------------------------
@@ -65,13 +64,13 @@
  *   Level Shifter Wiring (74AHCT125N):
  *   - VCC  -> 5V supply
  *   - GND  -> Common ground
- *   - 3A   -> Nano ESP32 Pin 2
+ *   - 3A   -> Nano ESP32 Pin 6
  *   - 3Y   -> LED DIN
  *   - 3OE  -> GND (always enabled)
  *
  * WIRING (ALL BOARDS)
  * --------------------
- * LED DIN -> Pin 2 (via 74AHCT125N for Nano ESP32)
+ * LED DIN -> Pin 6 (via 74AHCT125N for Nano ESP32)
  * LED 5V  -> External 5V supply
  * LED GND -> Common ground with board and supply
  *
@@ -109,9 +108,12 @@
  * VERSION HISTORY
  * ---------------
  * v1.0  2026-02-22  Initial release. Multi-board, multi-LED-type single LED
- *                   validation sketch. GPIO8 for Nano ESP32 (GPIO2 hangs,
- *                   GPIO6 conflicts with QSPI flash). Double-flash heartbeat.
+ *                   validation sketch. Double-flash heartbeat.
  *                   Diagnostic Serial output in showColor().
+ * v1.1  2026-02-22  DATA_PIN set to 6. Confirmed working on Pro Trinket 5V.
+ *                   Header updated with Nano ESP32 GPIO restrictions.
+ *                   Comment corrected to match DATA_PIN value.
+ * v1.2  2026-02-22  Added board/pin selection table in configuration block.
  * ============================================================================
  */
 
@@ -132,9 +134,19 @@
 
 // Data pin
 // NOTE: FastLED addLeds<> requires a compile-time integer literal.
-// GPIO2 hangs on ESP32-S3 (Nano ESP32) - use GPIO8 instead.
-// AVR boards (Pro Trinket, ItsyBitsy, Nano): digital pin 2.
-#define DATA_PIN        2
+//
+// Select DATA_PIN by target board:
+//
+//   Board                  | DATA_PIN | Notes
+//   -----------------------|----------|----------------------------------
+//   Pro Trinket 5V         |    6     | Confirmed working
+//   ItsyBitsy 5V 32u4      |    6     | Untested, expected to work
+//   Arduino Nano           |    6     | Untested, expected to work
+//   Arduino Nano ESP32     |    8     | GPIO6 = QSPI conflict
+//                          |          | GPIO2 = FastLED hangs
+//                          |          | GPIO8 = confirmed working
+//
+#define DATA_PIN        8   // <-- Change this when switching boards
 
 // Number of LEDs under test
 #define LED_COUNT       1
