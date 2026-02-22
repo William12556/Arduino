@@ -105,6 +105,14 @@
  * Install via: Arduino IDE -> Sketch -> Include Library -> Manage Libraries -> FastLED
  *
  * ============================================================================
+ *
+ * VERSION HISTORY
+ * ---------------
+ * v1.0  2026-02-22  Initial release. Multi-board, multi-LED-type single LED
+ *                   validation sketch. GPIO8 for Nano ESP32 (GPIO2 hangs,
+ *                   GPIO6 conflicts with QSPI flash). Double-flash heartbeat.
+ *                   Diagnostic Serial output in showColor().
+ * ============================================================================
  */
 
 #include <FastLED.h>
@@ -125,8 +133,8 @@
 // Data pin
 // NOTE: FastLED addLeds<> requires a compile-time integer literal.
 // GPIO2 hangs on ESP32-S3 (Nano ESP32) - use GPIO8 instead.
-// AVR boards (Pro Trinket, ItsyBitsy, Nano): digital pin 8.
-#define DATA_PIN        8
+// AVR boards (Pro Trinket, ItsyBitsy, Nano): digital pin 2.
+#define DATA_PIN        2
 
 // Number of LEDs under test
 #define LED_COUNT       1
