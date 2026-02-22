@@ -12,6 +12,10 @@
  * - D2 toggles LOW/HIGH at 1.5s interval
  * - D3 toggles LOW/HIGH at 1.5s interval (opposite phase to D2)
  * - Multimeter should show ~1.65V average on both pins
+ *
+ * VERSION HISTORY
+ * ---------------
+ * v1.0  2026-02-22  Initial release. Double-flash heartbeat added.
  */
 
 #define PIN_PORT        D2      // GPIO2
