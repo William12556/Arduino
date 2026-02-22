@@ -122,9 +122,10 @@
 // Set to 1 if using SK6812RGBW (enables white channel test)
 #define IS_RGBW         0
 
-// Data pin (Pin 2 on all supported boards)
-// NOTE: Use D2 alias on Nano ESP32 - integer 2 does not resolve to GPIO2
-#define DATA_PIN        D2
+// Data pin (Pin 2 / GPIO2 on all supported boards)
+// NOTE: FastLED addLeds<> requires a compile-time integer literal.
+// D2 on Nano ESP32 resolves to GPIO2. Use raw integer 2 for FastLED.
+#define DATA_PIN        2
 
 // Number of LEDs under test
 #define LED_COUNT       1
@@ -255,9 +256,14 @@ void loop() {
  * @param color  CRGB color value.
  */
 void showColor(const char* label, CRGB color) {
-  Serial.println(label);
+  Serial.print(label);
+  Serial.print(F(" R=")); Serial.print(color.r);
+  Serial.print(F(" G=")); Serial.print(color.g);
+  Serial.print(F(" B=")); Serial.println(color.b);
   leds[0] = color;
+  Serial.println(F("Calling FastLED.show()..."));
   FastLED.show();
+  Serial.println(F("FastLED.show() returned."));
   // Non-blocking 2 second wait - heartbeat runs during hold
   unsigned long start = millis();
   while (millis() - start < 2000) {
