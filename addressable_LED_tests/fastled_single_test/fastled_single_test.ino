@@ -122,10 +122,11 @@
 // Set to 1 if using SK6812RGBW (enables white channel test)
 #define IS_RGBW         0
 
-// Data pin (Pin 2 / GPIO2 on all supported boards)
+// Data pin
 // NOTE: FastLED addLeds<> requires a compile-time integer literal.
-// D2 on Nano ESP32 resolves to GPIO2. Use raw integer 2 for FastLED.
-#define DATA_PIN        2
+// GPIO2 hangs on ESP32-S3 (Nano ESP32) - use GPIO8 instead.
+// AVR boards (Pro Trinket, ItsyBitsy, Nano): digital pin 8.
+#define DATA_PIN        8
 
 // Number of LEDs under test
 #define LED_COUNT       1
