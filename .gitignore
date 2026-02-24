@@ -35,6 +35,9 @@ workspace/ai/
 workspace/proposal/
 workspace/proposal/closed/
 
+# Arduino
+libraries/
+
 # other
 10000
 test.txt
