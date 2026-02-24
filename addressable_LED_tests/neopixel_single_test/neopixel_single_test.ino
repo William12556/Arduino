@@ -107,6 +107,8 @@
  * v1.0  2026-02-22  Initial release. Based on fastled_single_test v1.2.
  *                   Uses Adafruit NeoPixel library for ESP32-S3 compatibility.
  *                   Same heartbeat pattern and colour cycle as FastLED variant.
+ * v1.1  2026-02-24  DATA_PIN corrected to GPIO47 (board pin D8) for Nano ESP32.
+ *                   Requires Tools -> Pin Numbering -> By GPIO number in Arduino IDE.
  * ============================================================================
  */
 
@@ -125,13 +127,15 @@
 #define IS_RGBW         0
 
 // Data pin - see board/pin table in header above
-#define DATA_PIN        8   // <-- Change this when switching boards
+// With 'By GPIO number' selected in Tools -> Pin Numbering:
+//   Board label D8 = GPIO47 on Arduino Nano ESP32
+#define DATA_PIN        47  // GPIO47 = board pin D8 (Nano ESP32, By GPIO number mode)
 
 // Number of LEDs under test
 #define LED_COUNT       1
 
 // Brightness (0-255). 128 = 50%. Reduce if supply is marginal.
-#define BRIGHTNESS      128
+#define BRIGHTNESS      64
 
 // ============================================================================
 // NeoPixel instance
