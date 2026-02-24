@@ -18,7 +18,7 @@
  * v1.0  2026-02-22  Initial release. Double-flash heartbeat added.
  */
 
-#define PIN_PORT        D2      // GPIO2
+#define PIN_PORT        D8      // GPIO?
 #define PIN_STARBOARD   D3      // GPIO3
 
 void setup() {
