@@ -35,22 +35,23 @@
  *
  * DATA PIN
  * --------
- * Pin 6 is the default for AVR boards. Pin 6 (D6) for Nano ESP32.
+ * Selected automatically by conditional compilation.
  *
- *   Board                    | DATA_PIN | Notes
- *   -------------------------|----------|----------------------------------
- *   Pro Trinket 5V           |    6     | 5V logic, no shifter needed
- *   ItsyBitsy 5V 32u4        |    6     | 5V logic, no shifter needed
- *   Arduino Nano             |    6     | 5V logic, no shifter needed
- *   Arduino Nano ESP32       |    6     | 3.3V logic - see WARNING
+ *   Board                    | DATA_PIN | HEARTBEAT_PIN | Notes
+ *   -------------------------|----------|---------------|----------------------
+ *   Pro Trinket 5V           |    6     |      13       | 5V logic, no shifter
+ *   ItsyBitsy 5V 32u4        |    6     |  LED_BUILTIN  | 5V logic, no shifter
+ *   Arduino Nano             |    6     |  LED_BUILTIN  | 5V logic, no shifter
+ *   Arduino Nano ESP32       | GPIO17   |     D6        | 3.3V logic, see WARNING
  *
  * NOTE: GPIO RESTRICTIONS ON NANO ESP32
  * ---------------------------------------
  * GPIO6  - connected to QSPI flash, must not be used.
  * GPIO2  - FastLED hangs on ESP32-S3. NeoPixel untested.
- * GPIO8  - confirmed working with FastLED on Nano ESP32.
- * NeoPixel uses ESP32 RMT driver directly and is more tolerant than FastLED.
- * Test with DATA_PIN 6 first. If no result, try DATA_PIN 8.
+ * GPIO17 - confirmed working with NeoPixel on Nano ESP32 (board label D8).
+ * GPIO9  - confirmed working as plain GPIO output (board label D6, heartbeat).
+ * NOTE: NeoPixel/FastLED require raw GPIO numbers on ESP32-S3 under core 3.3.7
+ *        remap mode. Board label symbols cause silent RMT failure.
  *
  * WARNING: ARDUINO NANO ESP32 LOGIC LEVEL
  * ----------------------------------------
@@ -61,9 +62,22 @@
  *   Level Shifter Wiring (74AHCT125N):
  *   - VCC  -> 5V supply
  *   - GND  -> Common ground
- *   - 3A   -> Nano ESP32 DATA_PIN
- *   - 3Y   -> LED DIN
- *   - 3OE  -> GND (always enabled)
+ *   - 1A   -> D8  (WS2812E data)
+ *   - 1Y   -> WS2812E DIN
+ *   - 1OE  -> GND (always enabled)
+ *   - 2A   -> D6  (heartbeat regular LED)
+ *   - 2Y   -> Regular LED anode (heartbeat output)
+ *   - 2OE  -> GND (always enabled)
+ *
+ *     ┌──────────┐
+ * 1OE │ 1     14 │ VCC
+ * 1A  │ 2     13 │ 4OE
+ * 1Y  │ 3     12 │ 4A
+ * 2OE │ 4     11 │ 4Y
+ * 2A  │ 5     10 │ 3OE
+ * 2Y  │ 6      9 │ 3A
+ * GND │ 7      8 │ 3Y
+ *     └──────────┘
  *
  * WIRING (ALL BOARDS)
  * --------------------
@@ -109,6 +123,20 @@
  *                   Same heartbeat pattern and colour cycle as FastLED variant.
  * v1.1  2026-02-24  DATA_PIN corrected to GPIO47 (board pin D8) for Nano ESP32.
  *                   Requires Tools -> Pin Numbering -> By GPIO number in Arduino IDE.
+ * v1.2  2026-02-25  DATA_PIN changed to D5 (board label) for WS2812E on level
+ *                   shifter channel 3. HEARTBEAT_PIN added on D8 (channel 1) to
+ *                   mirror LED_BUILTIN. Pin numbering mode dependency removed.
+ * v1.3  2026-02-25  Conditional compilation added for DATA_PIN and HEARTBEAT_PIN.
+ *                   Supports Arduino Nano ESP32 and Adafruit Pro Trinket 5V
+ *                   without manual pin changes between boards.
+ * v1.4  2026-02-25  Nano ESP32 pins swapped: DATA_PIN D8 (ch1), HEARTBEAT_PIN D5 (ch2).
+ *                   D5 confirmed non-functional for RMT/NeoPixel on ESP32-S3.
+ *                   D8 confirmed working. Level shifter wiring updated accordingly.
+ * v1.5  2026-02-26  HEARTBEAT_PIN changed from D5 to D6. D5 conflicts with D8 under
+ *                   core 3.3.7 remap (both resolve to GPIO8).
+ *                   DATA_PIN changed from D8 to raw GPIO17. NeoPixel requires raw
+ *                   GPIO numbers on ESP32-S3 under core 3.3.7 remap mode; board
+ *                   label symbols cause silent RMT failure.
  * ============================================================================
  */
 
@@ -126,16 +154,35 @@
 // Set to 1 if using SK6812RGBW (enables white channel test)
 #define IS_RGBW         0
 
-// Data pin - see board/pin table in header above
-// With 'By GPIO number' selected in Tools -> Pin Numbering:
-//   Board label D8 = GPIO47 on Arduino Nano ESP32
-#define DATA_PIN        47  // GPIO47 = board pin D8 (Nano ESP32, By GPIO number mode)
+// WS2812E data pin.
+// Nano ESP32: GPIO17 (board label D8) via 74AHCT125N level shifter channel 1 (1A->1Y->DIN).
+//             Raw GPIO number required - board label symbol causes silent RMT failure.
+// Pro Trinket 5V: pin 6 direct (5V logic, no shifter required).
+#if defined(ARDUINO_NANO_ESP32)
+  #define DATA_PIN      17  // GPIO17 = board label D8, level shifter channel 1
+#elif defined(ADAFRUIT_TRINKET_5V)
+  #define DATA_PIN      6   // Direct connection, no level shifter
+#else
+  #define DATA_PIN      6   // Default for AVR boards
+#endif
+
+// Heartbeat output pin. Mirrors LED_BUILTIN. Double-flash pattern.
+// Nano ESP32: D6 (GPIO9) via level shifter channel 2 (2A->2Y->external LED).
+//             Board label symbol D6 works for plain GPIO (no RMT involved).
+// Pro Trinket 5V: pin 13 (LED_BUILTIN, onboard LED).
+#if defined(ARDUINO_NANO_ESP32)
+  #define HEARTBEAT_PIN D6  // Board label D6, level shifter channel 2
+#elif defined(ADAFRUIT_TRINKET_5V)
+  #define HEARTBEAT_PIN 13  // LED_BUILTIN on Pro Trinket
+#else
+  #define HEARTBEAT_PIN LED_BUILTIN
+#endif
 
 // Number of LEDs under test
 #define LED_COUNT       1
 
 // Brightness (0-255). 128 = 50%. Reduce if supply is marginal.
-#define BRIGHTNESS      64
+#define BRIGHTNESS      32
 
 // ============================================================================
 // NeoPixel instance
@@ -152,6 +199,7 @@ void setup() {
   delay(1000);
 
   pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(HEARTBEAT_PIN, OUTPUT);
 
   // Report board identity and configuration
   Serial.println(F("\n=== neopixel_single_test ==="));
@@ -225,6 +273,7 @@ void updateHeartbeat() {
     step  = (step + 1) % HB_STEPS;
     timer = now;
     digitalWrite(LED_BUILTIN, HB[step].state);
+    digitalWrite(HEARTBEAT_PIN, HB[step].state);
   }
 }
 

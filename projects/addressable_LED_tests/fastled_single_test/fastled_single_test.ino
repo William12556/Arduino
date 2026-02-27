@@ -39,34 +39,52 @@
  *
  * DATA PIN
  * --------
- * Pin 6 is used across all supported boards.
+ * Selected automatically by conditional compilation.
  *
- *   Board                    | Physical Pin | Notes
- *   -------------------------|--------------|----------------------------
- *   Pro Trinket 5V           | Pin 6        | 5V logic, no shifter needed
- *   ItsyBitsy 5V 32u4        | Pin 6        | 5V logic, no shifter needed
- *   Arduino Nano             | Pin 6        | 5V logic, no shifter needed
- *   Arduino Nano ESP32       | Pin 6 (D6)   | 3.3V logic - see WARNING
+ *   Board                    | DATA_PIN | HEARTBEAT_PIN | Notes
+ *   -------------------------|----------|---------------|----------------------
+ *   Pro Trinket 5V           |    6     |      13       | 5V logic, no shifter
+ *   ItsyBitsy 5V 32u4        |    6     |  LED_BUILTIN  | 5V logic, no shifter
+ *   Arduino Nano             |    6     |  LED_BUILTIN  | 5V logic, no shifter
+ *   Arduino Nano ESP32       | GPIO17   |     D6        | 3.3V logic, see WARNING
  *
  * NOTE: GPIO RESTRICTIONS ON NANO ESP32
  * ---------------------------------------
  * GPIO6  - connected to QSPI flash, must not be used.
  * GPIO2  - FastLED hangs on ESP32-S3, must not be used.
- * GPIO8  - confirmed working with FastLED on Nano ESP32.
+ * GPIO17 - confirmed working with FastLED on Nano ESP32 (board label D8).
+ * GPIO9  - confirmed working as plain GPIO output (board label D6, heartbeat).
+ * NOTE: FastLED requires raw GPIO numbers on ESP32-S3 under core 3.3.7 remap mode.
+ *        Board label symbols (e.g. D8) resolve to logical pin numbers which FastLED
+ *        passes directly to the RMT peripheral. The RMT peripheral expects raw GPIO
+ *        numbers, causing silent failure. Use raw GPIO numbers for DATA_PIN.
  *
  * WARNING: ARDUINO NANO ESP32 LOGIC LEVEL
  * ----------------------------------------
  * The Nano ESP32 outputs 3.3V logic. WS2812B/SK6812 require >3.5V for
  * reliable logic HIGH recognition when powered at 5V.
- * A 74AHCT125N level shifter between Pin 6 and LED DIN is required for
+ * A 74AHCT125N level shifter between D8 and LED DIN is required for
  * reliable operation.
  *
  *   Level Shifter Wiring (74AHCT125N):
  *   - VCC  -> 5V supply
  *   - GND  -> Common ground
- *   - 3A   -> Nano ESP32 Pin 6
- *   - 3Y   -> LED DIN
- *   - 3OE  -> GND (always enabled)
+ *   - 1A   -> D8  (WS2812E data)
+ *   - 1Y   -> WS2812E DIN
+ *   - 1OE  -> GND (always enabled)
+ *   - 2A   -> D6  (heartbeat regular LED)
+ *   - 2Y   -> Regular LED anode (heartbeat output)
+ *   - 2OE  -> GND (always enabled)
+ *
+ *     ┌──────────┐
+ * 1OE │ 1     14 │ VCC
+ * 1A  │ 2     13 │ 4OE
+ * 1Y  │ 3     12 │ 4A
+ * 2OE │ 4     11 │ 4Y
+ * 2A  │ 5     10 │ 3OE
+ * 2Y  │ 6      9 │ 3A
+ * GND │ 7      8 │ 3Y
+ *     └──────────┘
  *
  * WIRING (ALL BOARDS)
  * --------------------
@@ -114,6 +132,16 @@
  *                   Header updated with Nano ESP32 GPIO restrictions.
  *                   Comment corrected to match DATA_PIN value.
  * v1.2  2026-02-22  Added board/pin selection table in configuration block.
+ * v1.3  2026-02-25  Conditional compilation added for DATA_PIN and HEARTBEAT_PIN.
+ *                   Nano ESP32: DATA_PIN D8 (ch1), HEARTBEAT_PIN D5 (ch2).
+ * v1.4  2026-02-26  HEARTBEAT_PIN changed from D5 to D6. D5 conflicts with D8 under
+ *                   core 3.3.7 remap (both resolve to GPIO8).
+ *                   DATA_PIN changed from D8 to raw GPIO17. FastLED requires raw GPIO
+ *                   numbers on ESP32-S3 under core 3.3.7 remap mode; board label
+ *                   symbols cause silent RMT failure.
+ *                   Pro Trinket: DATA_PIN 6, HEARTBEAT_PIN 13.
+ *                   BRIGHTNESS reduced to 32. Level shifter wiring updated.
+ *                   Aligned with neopixel_single_test v1.4.
  * ============================================================================
  */
 
@@ -132,27 +160,38 @@
 // Set to 1 if using SK6812RGBW (enables white channel test)
 #define IS_RGBW         0
 
-// Data pin
+// WS2812E data pin.
 // NOTE: FastLED addLeds<> requires a compile-time integer literal.
-//
-// Select DATA_PIN by target board:
-//
-//   Board                  | DATA_PIN | Notes
-//   -----------------------|----------|----------------------------------
-//   Pro Trinket 5V         |    6     | Confirmed working
-//   ItsyBitsy 5V 32u4      |    6     | Untested, expected to work
-//   Arduino Nano           |    6     | Untested, expected to work
-//   Arduino Nano ESP32     |    8     | GPIO6 = QSPI conflict
-//                          |          | GPIO2 = FastLED hangs
-//                          |          | GPIO8 = confirmed working
-//
-#define DATA_PIN        8   // <-- Change this when switching boards
+//       Board label symbols (e.g. D8) resolve to integer constants at
+//       compile time and satisfy this requirement.
+// Nano ESP32: GPIO17 (board label D8) via 74AHCT125N level shifter channel 1 (1A->1Y->DIN).
+//             Raw GPIO number required - board label symbol D8 causes silent RMT failure.
+// Pro Trinket 5V: pin 6 direct (5V logic, no shifter required).
+#if defined(ARDUINO_NANO_ESP32)
+  #define DATA_PIN      17  // GPIO17 = board label D8, level shifter channel 1
+#elif defined(ADAFRUIT_TRINKET_5V)
+  #define DATA_PIN      6   // Direct connection, no level shifter
+#else
+  #define DATA_PIN      6   // Default for AVR boards
+#endif
+
+// Heartbeat output pin. Mirrors LED_BUILTIN. Double-flash pattern.
+// Nano ESP32: D6 (GPIO9) via level shifter channel 2 (2A->2Y->external LED).
+//             Board label symbol D6 works for plain GPIO (no RMT involved).
+// Pro Trinket 5V: pin 13 (LED_BUILTIN, onboard LED).
+#if defined(ARDUINO_NANO_ESP32)
+  #define HEARTBEAT_PIN D6  // Board label D6, level shifter channel 2
+#elif defined(ADAFRUIT_TRINKET_5V)
+  #define HEARTBEAT_PIN 13  // LED_BUILTIN on Pro Trinket
+#else
+  #define HEARTBEAT_PIN LED_BUILTIN
+#endif
 
 // Number of LEDs under test
 #define LED_COUNT       1
 
-// Brightness (0-255). 128 = 50%. Reduce if supply is marginal.
-#define BRIGHTNESS      128
+// Brightness (0-255). 32 = ~12%. Reduce if supply is marginal.
+#define BRIGHTNESS      32
 
 // ============================================================================
 // LED Array
@@ -169,6 +208,7 @@ void setup() {
   delay(1000);
 
   pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(HEARTBEAT_PIN, OUTPUT);
 
   // Report board identity and configuration
   Serial.println(F("\n=== fastled_single_test ==="));
@@ -244,6 +284,7 @@ void updateHeartbeat() {
     step  = (step + 1) % HB_STEPS;
     timer = now;
     digitalWrite(LED_BUILTIN, HB[step].state);
+    digitalWrite(HEARTBEAT_PIN, HB[step].state);
   }
 }
 
