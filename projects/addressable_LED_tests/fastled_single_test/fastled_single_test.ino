@@ -168,11 +168,14 @@
 //             Raw GPIO number required - board label symbol D8 causes silent RMT failure.
 // Pro Trinket 5V: pin 6 direct (5V logic, no shifter required).
 #if defined(ARDUINO_NANO_ESP32)
-  #define DATA_PIN      17  // GPIO17 = board label D8, level shifter channel 1
+  #define DATA_PIN      9   // GPIO9 = board label D6, level shifter channel 1
+  #define DATA_PIN_2    17  // GPIO17 = board label D8, level shifter channel 2
 #elif defined(ADAFRUIT_TRINKET_5V)
   #define DATA_PIN      6   // Direct connection, no level shifter
+  #define DATA_PIN_2    7   // Second channel
 #else
   #define DATA_PIN      6   // Default for AVR boards
+  #define DATA_PIN_2    7
 #endif
 
 // Heartbeat output pin. Mirrors LED_BUILTIN. Double-flash pattern.
@@ -188,7 +191,7 @@
 #endif
 
 // Number of LEDs under test
-#define LED_COUNT       1
+#define LED_COUNT       8
 
 // Brightness (0-255). 32 = ~12%. Reduce if supply is marginal.
 #define BRIGHTNESS      32
@@ -198,6 +201,7 @@
 // ============================================================================
 
 CRGB leds[LED_COUNT];
+CRGB leds2[LED_COUNT];
 
 // ============================================================================
 // Setup
@@ -226,8 +230,10 @@ void setup() {
     Serial.println(F("Board   : Unknown"));
   #endif
 
-  Serial.print(F("Data Pin: "));
+  Serial.print(F("Data Pin 1: "));
   Serial.println(DATA_PIN);
+  Serial.print(F("Data Pin 2: "));
+  Serial.println(DATA_PIN_2);
   Serial.print(F("LED Type: "));
   Serial.println(F(""
     #if IS_RGBW
@@ -249,6 +255,7 @@ void setup() {
 
   // Initialise FastLED
   FastLED.addLeds<LED_TYPE, DATA_PIN, COLOR_ORDER>(leds, LED_COUNT);
+  FastLED.addLeds<LED_TYPE, DATA_PIN_2, COLOR_ORDER>(leds2, LED_COUNT);
   FastLED.setBrightness(BRIGHTNESS);
   FastLED.clear();
   FastLED.show();
@@ -322,7 +329,10 @@ void showColor(const char* label, CRGB color) {
   Serial.print(F(" R=")); Serial.print(color.r);
   Serial.print(F(" G=")); Serial.print(color.g);
   Serial.print(F(" B=")); Serial.println(color.b);
-  leds[0] = color;
+  for (int i = 0; i < LED_COUNT; i++) {
+    leds[i] = color;
+    leds2[i] = color;
+  }
   Serial.println(F("Calling FastLED.show()..."));
   FastLED.show();
   Serial.println(F("FastLED.show() returned."));

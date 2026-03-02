@@ -18,15 +18,18 @@ Arduino/
 
 - Level shifter Texas instrument 25bd376d e4 sn74ahct125n pinout
 ```text
-    ┌──────────┐
-1OE │ 1     14 │ VCC
-1A  │ 2     13 │ 4OE
-1Y  │ 3     12 │ 4A
-2OE │ 4     11 │ 4Y
-2A  │ 5     10 │ 3OE
-2Y  │ 6      9 │ 3A
-GND │ 7      8 │ 3Y
-    └──────────┘
+          ┌──────────┐
+  1OE GND │ 1     14 │ VCC
+  1A  DIN │ 2     13 │ GND 4OE
+  1Y  OUT │ 3     12 │ DIN 4A
+  2OE GND │ 4     11 │ OUT 4Y
+  2A  DIN │ 5     10 │ GND 3OE
+  2Y  OUT │ 6      9 │ DIN 3A
+  GND     │ 7      8 │ OUT 3Y
+          └──────────┘
+  OE = Output Enable (active LOW — tie to GND to enable)
+  A  = Input  (DIN  — connect to 3.3V logic source)
+  Y  = Output (DOUT — connect to 5V peripheral data line)
 ```
 - Arduino Nano ESP32 (ABX00083) pinout — 3.3V logic, USB-C, ESP32-S3
 ```text

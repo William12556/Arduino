@@ -165,8 +165,8 @@ Arduino Nano ESP32, Espressif core 3.3.7, remap mode active.
 
 | Board Label | GPIO | Function | Notes |
 |---|---|---|---|
-| D8 | GPIO17 | WS2812E data → level shifter 1A | Use raw `17` for RMT |
-| D6 | GPIO9 | Heartbeat LED → level shifter 2A | Board label `D6` safe for plain GPIO |
+| D8 | GPIO17 | WS2812E data → level shifter 1A | Use raw `17` for RMT. Confirmed. |
+| D6 | GPIO9 | WS2812E data → level shifter 1A | Use raw `9` for RMT. Confirmed. |
 | D5 | GPIO8 | — | Conflicts with D8 mapping; do not use alongside D8 |
 
 Level shifter wiring (74AHCT125N):
@@ -191,6 +191,7 @@ GND  → GND
 | Sketch | Change |
 |---|---|
 | `projects/addressable_LED_tests/fastled_single_test/fastled_single_test.ino` | v1.4 — DATA_PIN → 17, HEARTBEAT_PIN → D6 |
+| `projects/addressable_LED_tests/fastled_single_test/fastled_single_test.ino` | v1.5 — GPIO9 (D6) confirmed for RMT. Dual ring test: DATA_PIN → 9, DATA_PIN_2 → 17, LED_COUNT → 8 |
 | `projects/addressable_LED_tests/neopixel_single_test/neopixel_single_test.ino` | v1.5 — DATA_PIN → 17, HEARTBEAT_PIN → D6 |
 | `projects/addressable_LED_tests/fastled_diagnostic/fastled_diagnostic.ino` | v1.1 — DATA_PIN → 17, HEARTBEAT_PIN comment corrected |
 
@@ -203,6 +204,7 @@ GND  → GND
 | Version | Date | Notes |
 |---|---|---|
 | 1.0 | 2026-02-26 | Initial release. |
+| 1.1 | 2026-02-27 | GPIO9 (D6) confirmed working for FastLED RMT. Dual ring validation completed. Verified pin table updated. |
 
 ---
 
