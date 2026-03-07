@@ -26,7 +26,8 @@
  */
 
 #include "config.h"
-#include "bussard.h"
+// #include "bussard.h"    // Effect 1: counter-rotating wave + random flash
+#include "bussard2.h"      // Effect 2: per-LED pulse (yellow/orange/red) + green flash
 
 // ─── Heartbeat ────────────────────────────────────────────────────────────────
 
@@ -53,7 +54,8 @@ void setup() {
 
   Serial.println("PolarLights TOS Enterprise — Central Controller");
 
-  bussard_setup();
+  // bussard_setup();    // Effect 1
+  bussard2_setup();      // Effect 2
 
   // Add additional subsystem setup calls here:
   // navlights_setup();
@@ -65,7 +67,8 @@ void setup() {
 // ─── Loop ────────────────────────────────────────────────────────────────────
 
 void loop() {
-  bussard_loop();
+  // bussard_loop();    // Effect 1
+  bussard2_loop();      // Effect 2
 
   // Add additional subsystem loop calls here:
   // navlights_loop();
