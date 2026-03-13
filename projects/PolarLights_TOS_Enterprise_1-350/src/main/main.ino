@@ -39,14 +39,6 @@ static bool          heartbeat_state = false;
 void setup() {
   delay(100);
 
-  pinMode(LED_BUILTIN, OUTPUT);
-
-  // Startup blink — 3 fast blinks to confirm firmware is running
-  for (int i = 0; i < 3; i++) {
-    digitalWrite(LED_BUILTIN, HIGH); delay(100);
-    digitalWrite(LED_BUILTIN, LOW);  delay(100);
-  }
-
   Serial.begin(115200);
   delay(100);
 
@@ -55,7 +47,15 @@ void setup() {
   Serial.println("PolarLights TOS Enterprise — Central Controller");
 
   // bussard_setup();    // Effect 1
-  bussard2_setup();      // Effect 2
+  bussard2_setup();      // Effect 2 — called first to clear LEDs before startup blink
+
+  pinMode(LED_BUILTIN, OUTPUT);
+
+  // Startup blink — 3 fast blinks to confirm firmware is running
+  for (int i = 0; i < 3; i++) {
+    digitalWrite(LED_BUILTIN, HIGH); delay(100);
+    digitalWrite(LED_BUILTIN, LOW);  delay(100);
+  }
 
   // Add additional subsystem setup calls here:
   // navlights_setup();

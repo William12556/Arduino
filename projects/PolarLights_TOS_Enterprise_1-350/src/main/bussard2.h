@@ -18,8 +18,7 @@
 // ─── Animation Parameters ─────────────────────────────────────────────────────
 
 #define BUSSARD2_PHASE_STEP_DELAY   30    // ms between phase advance ticks
-#define BUSSARD2_FLASH_STEP_DELAY    3    // ms between green flash fade steps
-#define BUSSARD2_FLASH_PEAK        180    // green channel peak during flash
+#define BUSSARD2_FLASH_DURATION     50    // ms green flash is held on
 #define BUSSARD2_FLASH_PROB         15    // % chance of green flash at phase wrap
 
 // ─── Public Interface ─────────────────────────────────────────────────────────

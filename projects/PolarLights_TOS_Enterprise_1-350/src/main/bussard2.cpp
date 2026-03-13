@@ -12,7 +12,7 @@
  *   A slight per-LED phase step variation (1–3) adds further organic spread.
  *
  *   At each phase wrap (255 → 0), a probabilistic green flash may fire.
- *   The flash fades up to a peak then back to zero before normal cycling resumes.
+ *   The flash is a simple fixed-duration on/off pulse at full green.
  *
  * Colour mapping (phase half = 0 at dim, 127 at peak):
  *   R = 100 + (155 * half / 127)    →  100 .. 255
@@ -33,11 +33,10 @@
  * Per-LED state for the v2 pulse effect.
  */
 struct B2State {
-  uint8_t       phase;          // current position in pulse cycle (0–255)
-  uint8_t       phase_step;     // phase advance per tick (1–3, randomised at init)
-  bool          flashing;       // true during active green flash
-  uint8_t       flash_green;    // current green channel value during flash
-  uint8_t       flash_dir;      // 0 = fading down, 1 = fading up
+  uint8_t       phase;            // current position in pulse cycle (0–255)
+  uint8_t       phase_step;       // phase advance per tick (1–3, randomised at init)
+  bool          flashing;         // true during active green flash
+  unsigned long flash_end_time;   // millis() timestamp when flash expires
 };
 
 static CRGB    leds_port[LED_COUNT];
@@ -46,7 +45,6 @@ static B2State state_port[LED_COUNT];
 static B2State state_starboard[LED_COUNT];
 
 static unsigned long last_phase_step = 0;
-static unsigned long last_flash_step = 0;
 
 // ─── Private Functions ────────────────────────────────────────────────────────
 
@@ -73,57 +71,46 @@ static void initialize_ring(B2State* ring) {
   for (int i = 0; i < LED_COUNT; i++) {
     ring[i].phase       = (uint8_t)random(0, 256);
     ring[i].phase_step  = (uint8_t)random(1, 4);   // 1, 2, or 3
-    ring[i].flashing    = false;
-    ring[i].flash_green = 0;
-    ring[i].flash_dir   = 1;
+    ring[i].flashing      = false;
+    ring[i].flash_end_time = 0;
   }
 }
 
 /*
  * advance_phase()
- * Advances phase for one LED. Checks for phase wrap and triggers green flash.
+ * Advances phase for one LED. Returns true if a phase wrap occurred.
+ * Flash triggering is handled separately by check_flash_trigger().
  */
-static void advance_phase(B2State* state) {
-  if (state->flashing) return;  // hold phase during flash
+static bool advance_phase(B2State* state) {
+  if (state->flashing) return false;  // hold phase during flash
 
   uint16_t next = (uint16_t)state->phase + state->phase_step;
 
   if (next >= 256) {
-    // Phase wrap — evaluate flash trigger
     state->phase = (uint8_t)(next - 256);
-    if (random(0, 100) < BUSSARD2_FLASH_PROB) {
-      state->flashing    = true;
-      state->flash_green = 0;
-      state->flash_dir   = 1;
-    }
+    return true;   // phase wrapped — caller may evaluate flash trigger
   } else {
     state->phase = (uint8_t)next;
+    return false;
   }
 }
 
 /*
- * update_flash()
- * Advances the green flash fade for one LED.
- * Clears flash state when fade-down completes.
+ * check_flash_trigger()
+ * Evaluates green flash trigger for one LED at phase wrap.
+ * Skips if the LED or either neighbour is already flashing (adjacency guard).
  */
-static void update_flash(B2State* state) {
-  if (!state->flashing) return;
+static void check_flash_trigger(B2State* ring, int index) {
+  int prev = (index - 1 + LED_COUNT) % LED_COUNT;
+  int next = (index + 1) % LED_COUNT;
 
-  if (state->flash_dir == 1) {
-    // Fading up
-    if (state->flash_green < BUSSARD2_FLASH_PEAK) {
-      state->flash_green++;
-    } else {
-      state->flash_dir = 0;
-    }
-  } else {
-    // Fading down
-    if (state->flash_green > 0) {
-      state->flash_green--;
-    } else {
-      state->flashing    = false;
-      state->flash_green = 0;
-    }
+  if (ring[index].flashing) return;
+  if (ring[prev].flashing)  return;
+  if (ring[next].flashing)  return;
+
+  if (random(0, 100) < BUSSARD2_FLASH_PROB) {
+    ring[index].flashing      = true;
+    ring[index].flash_end_time = millis() + BUSSARD2_FLASH_DURATION;
   }
 }
 
@@ -133,12 +120,17 @@ static void update_flash(B2State* state) {
  * Renders green flash overlay when active; base pulse colour otherwise.
  */
 static void apply_colors(B2State* states, CRGB* leds) {
+  unsigned long now = millis();
   for (int i = 0; i < LED_COUNT; i++) {
     if (states[i].flashing) {
-      leds[i] = CRGB(0, states[i].flash_green, 0);
-    } else {
-      leds[i] = phase_to_color(states[i].phase);
+      if (now >= states[i].flash_end_time) {
+        states[i].flashing = false;   // flash expired — return to pulse
+      } else {
+        leds[i] = CRGB(0, 255, 0);
+        continue;
+      }
     }
+    leds[i] = phase_to_color(states[i].phase);
   }
 }
 
@@ -153,22 +145,20 @@ void bussard2_setup() {
   FastLED.addLeds<LED_TYPE, PIN_STARBOARD, COLOR_ORDER>(leds_starboard, LED_COUNT);
   FastLED.setBrightness(BRIGHTNESS);
 
+  // Ensure LEDs are off before any startup sequence
+  FastLED.clear();
+  FastLED.show();
+
   initialize_ring(state_port);
   initialize_ring(state_starboard);
 
   Serial.println("Bussard2: Initialised");
   Serial.println("Bussard2: Per-LED pulse mode");
 
-  // Startup LED test — all LEDs dim red for ~3s then ramp to full
+  // Startup ramp — LEDs ramp from off to full red over ~1s
   Serial.println("Bussard2: LED test...");
-  for (int i = 0; i < LED_COUNT; i++) {
-    leds_port[i]      = CRGB(32, 0, 0);
-    leds_starboard[i] = CRGB(32, 0, 0);
-  }
-  FastLED.show();
-  delay(3200);
 
-  for (int b = 32; b <= 255; b++) {
+  for (int b = 0; b <= 255; b++) {
     for (int i = 0; i < LED_COUNT; i++) {
       leds_port[i]      = CRGB(b, 0, 0);
       leds_starboard[i] = CRGB(b, 0, 0);
@@ -188,19 +178,13 @@ void bussard2_loop() {
   unsigned long now = millis();
 
   bool do_phase_step = (now - last_phase_step >= BUSSARD2_PHASE_STEP_DELAY);
-  bool do_flash_step = (now - last_flash_step >= BUSSARD2_FLASH_STEP_DELAY);
 
   if (do_phase_step) last_phase_step = now;
-  if (do_flash_step) last_flash_step = now;
 
-  for (int i = 0; i < LED_COUNT; i++) {
-    if (do_phase_step) {
-      advance_phase(&state_port[i]);
-      advance_phase(&state_starboard[i]);
-    }
-    if (do_flash_step) {
-      update_flash(&state_port[i]);
-      update_flash(&state_starboard[i]);
+  if (do_phase_step) {
+    for (int i = 0; i < LED_COUNT; i++) {
+      if (advance_phase(&state_port[i]))      check_flash_trigger(state_port,      i);
+      if (advance_phase(&state_starboard[i])) check_flash_trigger(state_starboard, i);
     }
   }
 
